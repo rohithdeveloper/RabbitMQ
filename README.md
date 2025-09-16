@@ -254,6 +254,9 @@ docker stop springboot-app
 # Remove container
 docker rm springboot-app
 
+# create docker image
+docker build -t springboot_rmq-demo .
+
 # Remove image
 docker rmi springboot-rabbitmq-app
 
@@ -288,6 +291,65 @@ This project is licensed under the MIT License.
 - GitHub: [@rohithparimella](https://github.com/rohithparimella)
 
 ---
+
+
+Steps to Create a Docker Container
+🧾 Step 1: Create a Dockerfile
+
+In your project root, create a file named Dockerfile (no extension):
+
+# Use a base image with Java
+FROM openjdk:17-jdk-slim
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy the built jar file into the container
+COPY target/springboot-rabbitmq-demo-0.0.1-SNAPSHOT.jar app.jar
+
+# Command to run the jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+🛠️ Step 2: Build the Docker Image
+docker build -t springboot_rmq-demo .
+
+
+-t is to tag the image with a name
+
+. is the build context (current directory)
+
+✅ This creates a Docker image named springboot_rmq-demo.
+
+📦 Step 3: Create and Run a Container
+docker run -d -p 8080:8080 --name springboot_container springboot_rmq-demo
+
+
+-d runs in detached mode (in background)
+
+-p maps ports (host:container)
+
+--name gives your container a name
+
+✅ This creates and starts a Docker container from your image.
+
+🔍 Step 4: Verify Container is Running
+docker ps
+
+
+You'll see:
+
+CONTAINER ID   IMAGE                PORTS                    NAMES
+xyz123abc456   springboot_rmq-demo  0.0.0.0:8080->8080/tcp   springboot_container
+
+🧪 Step 5: Access the Application
+
+Open in your browser:
+
+http://localhost:8080
+
+🛑 Step 6: Stop and Remove the Container (Optional)
+docker stop springboot_container
+docker rm springboot_container
 
 ## 🚀 Quick Commands Summary
 
