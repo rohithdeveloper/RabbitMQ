@@ -9,74 +9,95 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-
 @Configuration
 public class RabbitMqConfig {
 
-    @Value("${rabbitmq.queue.name}")
-    private String queue;
+    // ===========================
+    // Direct Exchange Configuration
+    // ===========================
+    @Value("${rabbitmq.direct.queue.name}")
+    private String directQueueName;
 
-    @Value("${rabbitmq.direct.name}")
-    private String exchange;
+    @Value("${rabbitmq.direct.exchange.name}")
+    private String directExchangeName;
 
-    @Value("${rabbit.routing.Key}")
-    private String routingkey;
-
-    @Value("${rabbitmq.jsonqueue.name}")
-    private String jsonqueue;
-
-
-    @Value("${rabbit.jsonrouting.Key}")
-    private String jsonroutingkey;
-
-    // spring bean for rabbitmq queue
-    @Bean
-    public Queue queue() {
-        return new Queue(queue);
-    }
-
-    // spring direct exchange
-    @Bean
-    public DirectExchange exchange() {
-        return new DirectExchange(exchange);
-    }
-
-    // configure rmq to use json and create pojo class to serialize or deserialize
+    @Value("${rabbitmq.direct.routing.key}")
+    private String directRoutingKey;
 
     @Bean
-    public Queue jsonqueue() {
-        return new Queue(jsonqueue);
-    }
-
-
-    // spring binding queue and exchange using routing key
-
-    @Bean
-    public Binding bind() {
-        return BindingBuilder.bind(queue()).to(exchange()).with(routingkey);
+    public Queue directQueue() {
+        return new Queue(directQueueName);
     }
 
     @Bean
-    public Binding jsonbind() {
+    public DirectExchange directExchange() {
+        return new DirectExchange(directExchangeName);
+    }
 
-        return BindingBuilder.bind(jsonqueue()).to(exchange()).with(jsonroutingkey);
+    @Bean
+    public Binding directBinding() {
+        return BindingBuilder.bind(directQueue()).to(directExchange()).with(directRoutingKey);
+    }
+
+    // ===========================
+    // JSON Queue with Direct Exchange
+    // ===========================
+    @Value("${rabbitmq.json.queue.name}")
+    private String jsonQueueName;
+
+    @Value("${rabbitmq.json.routing.key}")
+    private String jsonRoutingKey;
+
+    @Bean
+    public Queue jsonQueue() {
+        return new Queue(jsonQueueName);
+    }
+
+    @Bean
+    public Binding jsonBinding() {
+        return BindingBuilder.bind(jsonQueue()).to(directExchange()).with(jsonRoutingKey);
+    }
+
+    // ===========================
+    // Fanout Exchange Configuration
+    // ===========================
+    @Value("${rabbitmq.fanout.exchange.name}")
+    private String fanoutExchangeName;
+
+    @Value("${rabbitmq.fanout.queue.name}")
+    private String fanoutQueue1Name;
+
+
+
+    @Bean
+    public Queue fanoutQueue() {
+        return new Queue(fanoutQueue1Name);
     }
 
 
-    // connectionFactory, RabbitTempate, RabbitAdmin all these are autoconfigured no
-    // need to setup explicitly
+    @Bean
+    public FanoutExchange fanoutExchange() {
+        return new FanoutExchange(fanoutExchangeName);
+    }
 
     @Bean
-    public MessageConverter converter() {
+    public Binding fanoutBinding() {
+        return BindingBuilder.bind(fanoutQueue()).to(fanoutExchange());
+    }
 
+
+    // ===========================
+    // RabbitMQ Message Converter & Template
+    // ===========================
+    @Bean
+    public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
     @Bean
     public AmqpTemplate amqpTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(converter());
+        rabbitTemplate.setMessageConverter(messageConverter());
         return rabbitTemplate;
-
     }
 }
