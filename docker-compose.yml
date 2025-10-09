@@ -1,33 +1,57 @@
 version: '3.8'
 
 services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Test@123
+      MYSQL_DATABASE: rmqdemo
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - "5672:5672"    # RabbitMQ AMQP port
+      - "15672:15672"  # RabbitMQ Management UI port
     networks:
-      - rabbitmq-network
+      - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      timeout: 20s
+      retries: 10
 
   springboot-app:
-    image: springboot-rabbitmq-demo:latest
-    container_name: springboot-app
+    build: .
+    container_name: rmqdemo
     ports:
       - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rmqdemo
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Test@123
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
-    depends_on:
-      - rabbitmq
     networks:
-      - rabbitmq-network
+      - app-network
+
+volumes:
+  mysql-data:
 
 networks:
-  rabbitmq-network:
-    driver: bridge
+  app-network:

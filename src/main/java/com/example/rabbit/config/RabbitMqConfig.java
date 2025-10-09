@@ -16,7 +16,7 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.queue.name}")
     private String queue;
 
-    @Value("${rabbitmq.topic.name}")
+    @Value("${rabbitmq.direct.name}")
     private String exchange;
 
     @Value("${rabbit.routing.Key}")
@@ -35,17 +35,17 @@ public class RabbitMqConfig {
         return new Queue(queue);
     }
 
-    // spring topic exchange
+    // spring direct exchange
     @Bean
-    public TopicExchange exchange() {
-        return new TopicExchange(exchange);
+    public DirectExchange exchange() {
+        return new DirectExchange(exchange);
     }
 
     // configure rmq to use json and create pojo class to serialize or deserialize
 
     @Bean
     public Queue jsonqueue() {
-        return new Queue(queue);
+        return new Queue(jsonqueue);
     }
 
 
@@ -58,6 +58,7 @@ public class RabbitMqConfig {
 
     @Bean
     public Binding jsonbind() {
+
         return BindingBuilder.bind(jsonqueue()).to(exchange()).with(jsonroutingkey);
     }
 
@@ -67,6 +68,7 @@ public class RabbitMqConfig {
 
     @Bean
     public MessageConverter converter() {
+
         return new Jackson2JsonMessageConverter();
     }
 

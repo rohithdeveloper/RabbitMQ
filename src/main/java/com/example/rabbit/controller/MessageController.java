@@ -1,5 +1,8 @@
 package com.example.rabbit.controller;
 
+import com.example.rabbit.model.Employee;
+import com.example.rabbit.repository.EmployeeRepository;
+import com.example.rabbit.repository.RmqRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +20,11 @@ public class MessageController {
 	@Autowired
 	private RabbitMQProducer rmqProducer;
 
+	@Autowired
+	private RmqRepository rmqRepo;
+
+	@Autowired
+	private EmployeeRepository employeeRepo;
 //	@GetMapping("/publish")
 //	public ResponseEntity<String> sendMessage(@RequestParam("message") String message){
 //		rmqProducer.sendMessage(message);
@@ -26,6 +34,14 @@ public class MessageController {
 	@PostMapping("/publish")
 	public ResponseEntity<String> sendMessage(@RequestBody RabbitMQMessage request) {
 		rmqProducer.sendMessage(request.getMessage());
+		rmqRepo.save(request);
 		return ResponseEntity.ok("Message sent to RMQ successfully");
+	}
+
+	@PostMapping("/publish/employee")
+	public Employee saveEmployee(@RequestBody Employee employee) {
+		employeeRepo.save(employee);                 // Save first - generates ID
+		rmqProducer.sendEmployeeDetails(employee);   // Now send with correct ID
+		return employee;
 	}
 }
